@@ -1,0 +1,26 @@
+services:
+  db:
+    image: postgres:17.3-bookworm
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: electronic-library
+      POSTGRES_PASSWORD: electronic-library
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4:9.0.0
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "80:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
+  pgadmin_data:
