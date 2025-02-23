@@ -10,7 +10,7 @@ CREATE TABLE book_details (
 );
 
 CREATE INDEX idx_book_details_available_copies ON book_details(available_copies);
-CREATE INDEX idx_book_details_title_tsvector ON book_details USING GIN(title_tsvector);
+CREATE INDEX idx_book_details_title_tsvector ON book_details USING GIN(to_tsvector('english', title));
 CREATE UNIQUE INDEX idx_book_details_title_lower_trimmed ON book_details (LOWER(TRIM(title)));
 
 CREATE TRIGGER update_book_detail_timestamp
