@@ -121,6 +121,6 @@ func (repo *DbBookDetailRepository) UpdateAvailableCopies(ctx context.Context, i
 
 func (repo *DbBookDetailRepository) BeginTransaction(ctx context.Context) (pgx.Tx, error) {
 	return repo.Pool.BeginTx(ctx, pgx.TxOptions{
-		IsoLevel: pgx.ReadCommitted,
+		IsoLevel: pgx.Serializable,
 	})
 }
