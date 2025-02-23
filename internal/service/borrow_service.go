@@ -39,14 +39,10 @@ func (s *BorrowService) Call(ctx context.Context, ld *model.LoanDetail) (*model.
 	}
 
 	currentTime := time.Now().UTC()
-	loan := model.LoanDetail{
-		NameOfBorrower: ld.NameOfBorrower,
-		LoanDate:       currentTime,
-		ReturnDate:     currentTime.Add(loanDuration),
-		BookID:         ld.BookID,
-	}
+	ld.LoanDate = currentTime
+	ld.ReturnDate = currentTime.Add(loanDuration)
 
-	createdLoanDetail, err := s.LoanDetailRepo.CreateLoanDetail(ctx, &loan)
+	createdLoanDetail, err := s.LoanDetailRepo.CreateLoanDetail(ctx, ld)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create loan: %w", err)
 	}
