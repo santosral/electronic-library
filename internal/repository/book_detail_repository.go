@@ -9,15 +9,45 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type BookDetailRepository struct {
+type BookDetailRepository interface {
+	GetByID(ctx context.Context, id string) (*model.BookDetail, error)
+	SearchByTitle(ctx context.Context, title string, limit int, offset int) ([]model.BookDetail, int, error)
+	UpdateAvailableCopies(ctx context.Context, id string, newAvailableCopies int) error
+	BeginTransaction(ctx context.Context) (pgx.Tx, error)
+}
+
+type DbBookDetailRepository struct {
 	Pool *pgxpool.Pool
 }
 
-func NewBookDetailRepository(pool *pgxpool.Pool) *BookDetailRepository {
-	return &BookDetailRepository{Pool: pool}
+func NewBookDetailRepository(pool *pgxpool.Pool) *DbBookDetailRepository {
+	return &DbBookDetailRepository{Pool: pool}
 }
 
-func (repo *BookDetailRepository) SearchByTitle(ctx context.Context, title string, limit int, offset int) ([]model.BookDetail, int, error) {
+func (repo *DbBookDetailRepository) GetByID(ctx context.Context, id string) (*model.BookDetail, error) {
+	query := `
+		SELECT
+			ID,
+			TITLE,
+			AVAILABLE_COPIES
+		FROM
+			BOOK_DETAILS
+		WHERE
+			ID = $1;
+	`
+
+	row := repo.Pool.QueryRow(ctx, query, id)
+
+	var bookDetail model.BookDetail
+	err := row.Scan(&bookDetail.ID, &bookDetail.Title, &bookDetail.AvailableCopies)
+	if err != nil {
+		return nil, fmt.Errorf("book not found")
+	}
+
+	return &bookDetail, nil
+}
+
+func (repo *DbBookDetailRepository) SearchByTitle(ctx context.Context, title string, limit int, offset int) ([]model.BookDetail, int, error) {
 	tx, err := repo.Pool.BeginTx(ctx, pgx.TxOptions{
 		IsoLevel: pgx.ReadCommitted,
 	})
@@ -77,4 +107,20 @@ func (repo *BookDetailRepository) SearchByTitle(ctx context.Context, title strin
 	}
 
 	return bookDetails, totalCount, nil
+}
+
+func (repo *DbBookDetailRepository) UpdateAvailableCopies(ctx context.Context, id string, newAvailableCopies int) error {
+	query := `
+		UPDATE BOOK_DETAILS
+		SET AVAILABLE_COPIES = $1
+		WHERE ID = $2;
+	`
+	_, err := repo.Pool.Exec(ctx, query, newAvailableCopies, id)
+	return err
+}
+
+func (repo *DbBookDetailRepository) BeginTransaction(ctx context.Context) (pgx.Tx, error) {
+	return repo.Pool.BeginTx(ctx, pgx.TxOptions{
+		IsoLevel: pgx.ReadCommitted,
+	})
 }

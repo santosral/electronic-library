@@ -6,6 +6,7 @@ import (
 	"electronic-library/internal/db"
 	"electronic-library/internal/handler"
 	"electronic-library/internal/repository"
+	"electronic-library/internal/service"
 	"log"
 	"net/http"
 	"strconv"
@@ -33,9 +34,15 @@ func main() {
 	bookRepo := repository.NewBookDetailRepository(dbConnection.Pool)
 	bookHandler := handler.NewBookDetailHandler(bookRepo)
 
+	loanDetailRepo := repository.NewLoanDetailRepository(dbConnection.Pool)
+
+	borrowService := service.NewBorrowService(bookRepo, loanDetailRepo)
+	borrowHandler := handler.NewBorrowHandler(*borrowService)
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/book-details/search", bookHandler.SearchBooks)
+	mux.HandleFunc("/borrow", borrowHandler.BorrowBook)
 
 	portStr := strconv.Itoa(cfg.Server.Port)
 	log.Printf("Server is running on port %s...\n", portStr)

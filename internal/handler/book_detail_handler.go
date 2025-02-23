@@ -8,10 +8,10 @@ import (
 )
 
 type BookDetailHandler struct {
-	BookRepo *repository.BookDetailRepository
+	BookRepo repository.BookDetailRepository
 }
 
-func NewBookDetailHandler(repo *repository.BookDetailRepository) *BookDetailHandler {
+func NewBookDetailHandler(repo repository.BookDetailRepository) *BookDetailHandler {
 	return &BookDetailHandler{BookRepo: repo}
 }
 
