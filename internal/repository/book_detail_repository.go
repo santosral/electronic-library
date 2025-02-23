@@ -26,12 +26,24 @@ func (repo *BookDetailRepository) SearchByTitle(ctx context.Context, title strin
 	}
 
 	query := `
-		SELECT id, title, available_copies
-		FROM book_details
-		WHERE to_tsvector('english', title) @@ plainto_tsquery('english', $1)
-		AND available_copies > 0
-		ORDER BY ts_rank(to_tsvector('english', title), plainto_tsquery('english', $1)) DESC
-		LIMIT $2 OFFSET $3
+		SELECT
+			ID,
+			TITLE,
+			AVAILABLE_COPIES
+		FROM
+			BOOK_DETAILS
+		WHERE
+			TO_TSVECTOR('english', TITLE) @@ WEBSEARCH_TO_TSQUERY('english', $1)
+			AND AVAILABLE_COPIES > 0
+		ORDER BY
+			TS_RANK(
+				TO_TSVECTOR('english', TITLE),
+				WEBSEARCH_TO_TSQUERY('english', $1)
+			) DESC
+		LIMIT
+			$2
+		OFFSET
+			$3;
 	`
 
 	rows, err := tx.Query(ctx, query, title, limit, offset)
@@ -46,10 +58,13 @@ func (repo *BookDetailRepository) SearchByTitle(ctx context.Context, title strin
 	}
 
 	countQuery := `
-		SELECT COUNT(*)
-		FROM book_details
-		WHERE to_tsvector('english', title) @@ plainto_tsquery('english', $1)
-		AND available_copies > 0
+		SELECT
+			COUNT(*)
+		FROM
+			BOOK_DETAILS
+		WHERE
+			TO_TSVECTOR('english', TITLE) @@ WEBSEARCH_TO_TSQUERY('english', $1)
+			AND AVAILABLE_COPIES > 0
 	`
 	var totalCount int
 	err = tx.QueryRow(ctx, countQuery, title).Scan(&totalCount)
