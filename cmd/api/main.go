@@ -32,17 +32,19 @@ func main() {
 	log.Printf("Successfully connected to the database")
 
 	bookRepo := repository.NewBookDetailRepository(dbConnection.Pool)
-	bookHandler := handler.NewBookDetailHandler(bookRepo)
-
 	loanDetailRepo := repository.NewLoanDetailRepository(dbConnection.Pool)
 
 	borrowService := service.NewBorrowService(bookRepo, loanDetailRepo)
-	borrowHandler := handler.NewBorrowHandler(*borrowService)
+	extendService := service.NewExtendService(bookRepo, loanDetailRepo)
+
+	bookDetailHandler := handler.NewBookDetailHandler(bookRepo, *borrowService)
+	loanDetailHandler := handler.NewLoanDetailHandler(*extendService)
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/book-details/search", bookHandler.SearchBooks)
-	mux.HandleFunc("/borrow", borrowHandler.BorrowBook)
+	mux.HandleFunc("/book-details/search", bookDetailHandler.SearchBooks)
+	mux.HandleFunc("/borrow", bookDetailHandler.BorrowBook)
+	mux.HandleFunc("/extend", loanDetailHandler.Extend)
 
 	portStr := strconv.Itoa(cfg.Server.Port)
 	log.Printf("Server is running on port %s...\n", portStr)

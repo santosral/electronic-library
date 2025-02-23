@@ -7,15 +7,15 @@ import (
 	"net/http"
 )
 
-type BorrowHandler struct {
-	BorrowService service.BorrowService
+type LoanDetailHandler struct {
+	ExtendService service.ExtendService
 }
 
-func NewBorrowHandler(bs service.BorrowService) *BorrowHandler {
-	return &BorrowHandler{BorrowService: bs}
+func NewLoanDetailHandler(es service.ExtendService) *LoanDetailHandler {
+	return &LoanDetailHandler{ExtendService: es}
 }
 
-func (h *BorrowHandler) BorrowBook(w http.ResponseWriter, r *http.Request) {
+func (h *LoanDetailHandler) Extend(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method != http.MethodPost {
@@ -31,10 +31,10 @@ func (h *BorrowHandler) BorrowBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loanDetail, err := h.BorrowService.Call(r.Context(), loanDetail)
+	loanDetail, err := h.ExtendService.Call(r.Context(), loanDetail)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		response := NewErrorResponse("Error borrowing the book", err)
+		response := NewErrorResponse("Error extending the loan", err)
 		json.NewEncoder(w).Encode(response)
 		return
 	}

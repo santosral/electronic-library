@@ -1,18 +1,24 @@
 package handler
 
 import (
+	"electronic-library/internal/model"
 	"electronic-library/internal/repository"
+	"electronic-library/internal/service"
 	"encoding/json"
 	"net/http"
 	"strconv"
 )
 
 type BookDetailHandler struct {
-	BookRepo repository.BookDetailRepository
+	BookRepo      repository.BookDetailRepository
+	BorrowService service.BorrowService
 }
 
-func NewBookDetailHandler(repo repository.BookDetailRepository) *BookDetailHandler {
-	return &BookDetailHandler{BookRepo: repo}
+func NewBookDetailHandler(repo repository.BookDetailRepository, bs service.BorrowService) *BookDetailHandler {
+	return &BookDetailHandler{
+		BookRepo:      repo,
+		BorrowService: bs,
+	}
 }
 
 func (h *BookDetailHandler) SearchBooks(w http.ResponseWriter, r *http.Request) {
@@ -73,5 +79,36 @@ func (h *BookDetailHandler) SearchBooks(w http.ResponseWriter, r *http.Request) 
 		w.WriteHeader(http.StatusInternalServerError)
 		response := NewErrorResponse("Error encoding response:", err)
 		json.NewEncoder(w).Encode(response)
+	}
+}
+
+func (h *BookDetailHandler) BorrowBook(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(NewErrorResponse("Invalid HTTP method", nil))
+		return
+	}
+
+	var loanDetail *model.LoanDetail
+	if err := json.NewDecoder(r.Body).Decode(&loanDetail); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(NewErrorResponse("Invalid JSON format", err))
+		return
+	}
+
+	loanDetail, err := h.BorrowService.Call(r.Context(), loanDetail)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		response := NewErrorResponse("Error borrowing the book", err)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(NewSuccessResponse(loanDetail, nil)); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(NewErrorResponse("Error encoding response:", err))
 	}
 }
