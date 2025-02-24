@@ -12,12 +12,14 @@ import (
 type BookDetailHandler struct {
 	BookRepo      repository.BookDetailRepository
 	BorrowService service.BorrowService
+	ReturnService service.ReturnService
 }
 
-func NewBookDetailHandler(repo repository.BookDetailRepository, bs service.BorrowService) *BookDetailHandler {
+func NewBookDetailHandler(repo repository.BookDetailRepository, bs service.BorrowService, rs service.ReturnService) *BookDetailHandler {
 	return &BookDetailHandler{
 		BookRepo:      repo,
 		BorrowService: bs,
+		ReturnService: rs,
 	}
 }
 
@@ -99,6 +101,37 @@ func (h *BookDetailHandler) BorrowBook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	loanDetail, err := h.BorrowService.Call(r.Context(), loanDetail)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		response := NewErrorResponse("Error borrowing the book", err)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(NewSuccessResponse(loanDetail, nil)); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(NewErrorResponse("Error encoding response:", err))
+	}
+}
+
+func (h *BookDetailHandler) ReturnBook(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(NewErrorResponse("Invalid HTTP method", nil))
+		return
+	}
+
+	var loanDetail *model.LoanDetail
+	if err := json.NewDecoder(r.Body).Decode(&loanDetail); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(NewErrorResponse("Invalid JSON format", err))
+		return
+	}
+
+	loanDetail, err := h.ReturnService.Call(r.Context(), loanDetail)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := NewErrorResponse("Error borrowing the book", err)

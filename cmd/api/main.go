@@ -36,8 +36,9 @@ func main() {
 
 	borrowService := service.NewBorrowService(bookRepo, loanDetailRepo)
 	extendService := service.NewExtendService(bookRepo, loanDetailRepo)
+	returnService := service.NewReturnService(bookRepo, loanDetailRepo)
 
-	bookDetailHandler := handler.NewBookDetailHandler(bookRepo, *borrowService)
+	bookDetailHandler := handler.NewBookDetailHandler(bookRepo, *borrowService, *returnService)
 	loanDetailHandler := handler.NewLoanDetailHandler(*extendService)
 
 	mux := http.NewServeMux()
@@ -45,6 +46,7 @@ func main() {
 	mux.HandleFunc("/book-details/search", bookDetailHandler.SearchBooks)
 	mux.HandleFunc("/borrow", bookDetailHandler.BorrowBook)
 	mux.HandleFunc("/extend", loanDetailHandler.Extend)
+	mux.HandleFunc("/return", bookDetailHandler.ReturnBook)
 
 	portStr := strconv.Itoa(cfg.Server.Port)
 	log.Printf("Server is running on port %s...\n", portStr)

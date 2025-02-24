@@ -42,7 +42,7 @@ func (repo *DbLoanDetailRepository) GetByID(ctx context.Context, id string) (*mo
 	var loanDetail model.LoanDetail
 	err := row.Scan(&loanDetail.ID, &loanDetail.NameOfBorrower, &loanDetail.LoanDate, &loanDetail.ReturnDate)
 	if err != nil {
-		return nil, fmt.Errorf("book not found")
+		return nil, fmt.Errorf("loan detail not found")
 	}
 
 	return &loanDetail, nil
