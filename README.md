@@ -7,7 +7,8 @@
 3. [Installation](#installation)
 4. [Running the App](#running-the-application)
 5. [Debugging the App](#debugging-the-application)
-6. [API Endpoints on Postman](#api-endpoints-on-postman)
+6. [Concurrency Control in PostgreSQL](#concurrency-control-in-postgresql)
+7. [Installing and Using Postman for API Testing](#installing-and-using-postman-for-api-testing)
 
 ---
 
@@ -214,6 +215,35 @@ Here’s how PostgreSQL handles these phenomena at different isolation levels:
 
 For more details, refer to the [PostgreSQL Concurrency Control Documentation](https://www.postgresql.org/docs/current/mvcc.html).
 
-## API Endpoints on Postman
+## Installing and Using Postman for API Testing
 
-[Collection](https://www.postman.com/lively-spaceship-99649/workspace/public-applications/collection/16588736-ad74bcde-d340-48c2-af68-5327dd03c1e1?action=share&creator=16588736)
+### 1. Install Postman
+
+To install the Postman Desktop App, follow the steps below:
+
+  1. Visit the [Postman Download Page](https://www.postman.com/downloads/).
+  2. Download the installer for Windows.
+  3. Run the installer and follow the on-screen instructions to complete the installation.
+
+### 2. Import API Collection to Postman
+
+Once Postman is installed, you can import your eBook API request collection into the Postman Desktop App by following these steps:
+
+1. **Copy the Collection Link**:  
+   Copy the following URL to import the collection:  
+   `https://www.postman.com/lively-spaceship-99649/workspace/public-applications/collection/16588736-ad74bcde-d340-48c2-af68-5327dd03c1e1?action=share&creator=16588736`
+
+2. **Open Postman Desktop App**:
+   - Launch the Postman Desktop App after installation.
+
+3. **Import the Collection**:
+   - Click on the **Import** button located in the top-left corner of the Postman app.
+   - In the "Import" dialog, choose the **Link** tab.
+   - Paste the copied URL into the input field.
+   - Click **Continue** and then **Import** to bring the collection into your Postman.
+
+4. **Access the API Requests**:
+   - Once imported, you should see the collection listed under **Collections** on the left sidebar.
+   - Click on the collection and select the specific request you wish to test.
+
+Now you can start testing and interacting with your eBook API directly within Postman!
