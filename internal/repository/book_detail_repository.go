@@ -48,13 +48,6 @@ func (repo *DbBookDetailRepository) GetByID(ctx context.Context, id string) (*mo
 }
 
 func (repo *DbBookDetailRepository) SearchByTitle(ctx context.Context, title string, limit int, offset int) ([]model.BookDetail, int, error) {
-	tx, err := repo.Pool.BeginTx(ctx, pgx.TxOptions{
-		IsoLevel: pgx.ReadCommitted,
-	})
-	if err != nil {
-		return nil, 0, fmt.Errorf("unable to begin transaction: %w", err)
-	}
-
 	query := `
 		SELECT
 			ID,
@@ -76,7 +69,7 @@ func (repo *DbBookDetailRepository) SearchByTitle(ctx context.Context, title str
 			$3;
 	`
 
-	rows, err := tx.Query(ctx, query, title, limit, offset)
+	rows, err := repo.Pool.Query(ctx, query, title, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("error performing text search on title: %w", err)
 	}
@@ -97,13 +90,9 @@ func (repo *DbBookDetailRepository) SearchByTitle(ctx context.Context, title str
 			AND AVAILABLE_COPIES > 0
 	`
 	var totalCount int
-	err = tx.QueryRow(ctx, countQuery, title).Scan(&totalCount)
+	err = repo.Pool.QueryRow(ctx, countQuery, title).Scan(&totalCount)
 	if err != nil {
 		return nil, 0, fmt.Errorf("error fetching total count: %w", err)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return nil, 0, fmt.Errorf("error committing transaction: %w", err)
 	}
 
 	return bookDetails, totalCount, nil
