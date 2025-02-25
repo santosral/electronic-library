@@ -30,7 +30,8 @@ func (repo *DbLoanDetailRepository) GetByID(ctx context.Context, id string) (*mo
 			ID,
 			NAME_OF_BORROWER,
 			LOAN_DATE,
-			RETURN_DATE
+			RETURN_DATE,
+			RETURNED_ON
 		FROM
 			LOAN_DETAILS
 		WHERE
@@ -40,9 +41,9 @@ func (repo *DbLoanDetailRepository) GetByID(ctx context.Context, id string) (*mo
 	row := repo.Pool.QueryRow(ctx, query, id)
 
 	var loanDetail model.LoanDetail
-	err := row.Scan(&loanDetail.ID, &loanDetail.NameOfBorrower, &loanDetail.LoanDate, &loanDetail.ReturnDate)
+	err := row.Scan(&loanDetail.ID, &loanDetail.NameOfBorrower, &loanDetail.LoanDate, &loanDetail.ReturnDate, &loanDetail.ReturnedOn)
 	if err != nil {
-		return nil, fmt.Errorf("loan detail not found")
+		return nil, err
 	}
 
 	return &loanDetail, nil
@@ -59,7 +60,7 @@ func (repo *DbLoanDetailRepository) CreateLoanDetail(ctx context.Context, ld *mo
 	err := repo.Pool.QueryRow(ctx, query, ld.NameOfBorrower, ld.BookID, ld.LoanDate, ld.ReturnDate).
 		Scan(&ld.ID, &ld.NameOfBorrower, &ld.BookID, &ld.LoanDate, &ld.ReturnDate)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create loan detail: %w", err)
+		return nil, err
 	}
 
 	return ld, err
@@ -69,14 +70,15 @@ func (repo *DbLoanDetailRepository) UpdateLoanDetail(ctx context.Context, ld *mo
 	query := `
 		UPDATE LOAN_DETAILS
 		SET
-			RETURN_DATE = $1
+			RETURN_DATE = $2,
+			RETURNED_ON = $3
 		WHERE
-			ID = $2
-		RETURNING ID, NAME_OF_BORROWER, BOOK_ID, LOAN_DATE, RETURN_DATE;
+			ID = $1
+		RETURNING ID, NAME_OF_BORROWER, BOOK_ID, LOAN_DATE, RETURN_DATE, RETURNED_ON;
 	`
 
-	err := repo.Pool.QueryRow(ctx, query, ld.ReturnDate, ld.ID).
-		Scan(&ld.ID, &ld.NameOfBorrower, &ld.BookID, &ld.LoanDate, &ld.ReturnDate)
+	err := repo.Pool.QueryRow(ctx, query, ld.ID, ld.ReturnDate, ld.ReturnedOn).
+		Scan(&ld.ID, &ld.NameOfBorrower, &ld.BookID, &ld.LoanDate, &ld.ReturnDate, &ld.ReturnedOn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update loan detail: %w", err)
 	}

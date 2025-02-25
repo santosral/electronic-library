@@ -4,7 +4,7 @@ import (
 	"context"
 	"electronic-library/internal/model"
 	"electronic-library/internal/repository"
-	"fmt"
+	"electronic-library/pkg/errors"
 	"time"
 )
 
@@ -23,16 +23,16 @@ func NewExtendService(bdr repository.BookDetailRepository, ldr repository.LoanDe
 	}
 }
 
-func (s *ExtendService) Call(ctx context.Context, ld *model.LoanDetail) (*model.LoanDetail, error) {
+func (s *ExtendService) Call(ctx context.Context, ld *model.LoanDetail) (*model.LoanDetail, *errors.APIError) {
 	tx, err := s.LoanDetailRepo.BeginTransaction(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("unable to start transaction: %w", err)
+		return nil, errors.New(500, "Transaction failed for extend service")
 	}
 	defer tx.Rollback(ctx)
 
 	ld, err = s.LoanDetailRepo.GetByID(ctx, ld.ID)
 	if err != nil {
-		return nil, fmt.Errorf("error fetching loan detail: %w", err)
+		return nil, errors.New(401, "loan detail not found")
 	}
 
 	newReturnDate := ld.ReturnDate.Add(ExtendDuration)
@@ -40,12 +40,12 @@ func (s *ExtendService) Call(ctx context.Context, ld *model.LoanDetail) (*model.
 
 	updatedLoanDetail, err := s.LoanDetailRepo.UpdateLoanDetail(ctx, ld)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update loan: %w", err)
+		return nil, errors.New(500, "Transaction: failed to update loan detail")
 	}
 
 	err = tx.Commit(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+		return nil, errors.New(500, "Transaction: failed to commit")
 	}
 
 	return updatedLoanDetail, nil

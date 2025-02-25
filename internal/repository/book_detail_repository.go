@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"electronic-library/internal/model"
-	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -11,9 +10,17 @@ import (
 
 type BookDetailRepository interface {
 	GetByID(ctx context.Context, id string) (*model.BookDetail, error)
-	SearchByTitle(ctx context.Context, title string, limit int, offset int) ([]model.BookDetail, int, error)
+	SearchByTitle(ctx context.Context, title string, limit int, offset int) ([]model.BookDetail, error)
 	UpdateAvailableCopies(ctx context.Context, id string, newAvailableCopies int) error
 	BeginTransaction(ctx context.Context) (pgx.Tx, error)
+}
+
+type BookNotFound struct {
+	Message string
+}
+
+func (e *BookNotFound) Error() string {
+	return e.Message
 }
 
 type DbBookDetailRepository struct {
@@ -41,13 +48,13 @@ func (repo *DbBookDetailRepository) GetByID(ctx context.Context, id string) (*mo
 	var bookDetail model.BookDetail
 	err := row.Scan(&bookDetail.ID, &bookDetail.Title, &bookDetail.AvailableCopies)
 	if err != nil {
-		return nil, fmt.Errorf("book not found")
+		return nil, &BookNotFound{Message: "book not found"}
 	}
 
 	return &bookDetail, nil
 }
 
-func (repo *DbBookDetailRepository) SearchByTitle(ctx context.Context, title string, limit int, offset int) ([]model.BookDetail, int, error) {
+func (repo *DbBookDetailRepository) SearchByTitle(ctx context.Context, title string, limit int, offset int) ([]model.BookDetail, error) {
 	query := `
 		SELECT
 			ID,
@@ -71,31 +78,16 @@ func (repo *DbBookDetailRepository) SearchByTitle(ctx context.Context, title str
 
 	rows, err := repo.Pool.Query(ctx, query, title, limit, offset)
 	if err != nil {
-		return nil, 0, fmt.Errorf("error performing text search on title: %w", err)
+		return nil, err
 	}
 	defer rows.Close()
 
 	bookDetails, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[model.BookDetail])
 	if err != nil {
-		return nil, 0, fmt.Errorf("error scanning title: %w", err)
+		return nil, err
 	}
 
-	countQuery := `
-		SELECT
-			COUNT(*)
-		FROM
-			BOOK_DETAILS
-		WHERE
-			TO_TSVECTOR('english', TITLE) @@ WEBSEARCH_TO_TSQUERY('english', $1)
-			AND AVAILABLE_COPIES > 0
-	`
-	var totalCount int
-	err = repo.Pool.QueryRow(ctx, countQuery, title).Scan(&totalCount)
-	if err != nil {
-		return nil, 0, fmt.Errorf("error fetching total count: %w", err)
-	}
-
-	return bookDetails, totalCount, nil
+	return bookDetails, nil
 }
 
 func (repo *DbBookDetailRepository) UpdateAvailableCopies(ctx context.Context, id string, newAvailableCopies int) error {

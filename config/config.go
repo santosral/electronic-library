@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 )
 
@@ -32,7 +31,7 @@ type DatabaseConfig struct {
 func LoadConfig(filename string) (*Config, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		return nil, fmt.Errorf("could not open config file: %w", err)
+		return nil, err
 	}
 	defer file.Close()
 
@@ -40,7 +39,7 @@ func LoadConfig(filename string) (*Config, error) {
 	var config Config
 	err = decoder.Decode(&config)
 	if err != nil {
-		return nil, fmt.Errorf("could not decode config file: %w", err)
+		return nil, err
 	}
 
 	return &config, nil

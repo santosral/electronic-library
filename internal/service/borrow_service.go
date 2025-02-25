@@ -4,7 +4,7 @@ import (
 	"context"
 	"electronic-library/internal/model"
 	"electronic-library/internal/repository"
-	"fmt"
+	"electronic-library/pkg/errors"
 	"time"
 )
 
@@ -22,20 +22,20 @@ func NewBorrowService(bdr repository.BookDetailRepository, ldr repository.LoanDe
 	}
 }
 
-func (s *BorrowService) Call(ctx context.Context, ld *model.LoanDetail) (*model.LoanDetail, error) {
+func (s *BorrowService) Call(ctx context.Context, ld *model.LoanDetail) (*model.LoanDetail, *errors.APIError) {
 	tx, err := s.BookDetailRepo.BeginTransaction(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("unable to start transaction: %w", err)
+		return nil, errors.New(500, "Transaction error")
 	}
 	defer tx.Rollback(ctx)
 
 	book, err := s.BookDetailRepo.GetByID(ctx, ld.BookID)
 	if err != nil {
-		return nil, fmt.Errorf("error fetching book details: %w", err)
+		return nil, errors.New(404, "Book detail not found")
 	}
 
 	if book.AvailableCopies == 0 {
-		return nil, fmt.Errorf("no copies available for loan")
+		return nil, errors.New(422, "Book is unavailable")
 	}
 
 	currentTime := time.Now().UTC()
@@ -44,17 +44,17 @@ func (s *BorrowService) Call(ctx context.Context, ld *model.LoanDetail) (*model.
 
 	createdLoanDetail, err := s.LoanDetailRepo.CreateLoanDetail(ctx, ld)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create loan: %w", err)
+		return nil, errors.New(500, "Transaction: failed to create loan detail")
 	}
 
 	err = s.BookDetailRepo.UpdateAvailableCopies(ctx, book.ID, book.AvailableCopies-1)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update book availability: %w", err)
+		return nil, errors.New(500, "Transaction: failed to update book detail")
 	}
 
 	err = tx.Commit(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+		return nil, errors.New(500, "Transaction: failed to commit transaction")
 	}
 
 	return createdLoanDetail, nil

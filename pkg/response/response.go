@@ -1,4 +1,4 @@
-package handler
+package response
 
 type SuccessResponse struct {
 	Status     string      `json:"status"`
@@ -9,13 +9,11 @@ type SuccessResponse struct {
 type ErrorResponse struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
-	Error   string `json:"error,omitempty"`
 }
 
 type Pagination struct {
-	TotalCount int `json:"total_count"`
-	Limit      int `json:"limit"`
-	Offset     int `json:"offset"`
+	Limit  int `json:"limit"`
+	Offset int `json:"offset"`
 }
 
 func NewSuccessResponse(data interface{}, pagination *Pagination) SuccessResponse {
@@ -26,14 +24,9 @@ func NewSuccessResponse(data interface{}, pagination *Pagination) SuccessRespons
 	}
 }
 
-func NewErrorResponse(message string, err error) ErrorResponse {
-	var errorMessage string
-	if err != nil {
-		errorMessage = err.Error()
-	}
+func NewErrorResponse(message string) ErrorResponse {
 	return ErrorResponse{
 		Status:  "error",
 		Message: message,
-		Error:   errorMessage,
 	}
 }
