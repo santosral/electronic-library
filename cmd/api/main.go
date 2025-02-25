@@ -73,7 +73,7 @@ func main() {
 	<-stop
 	logger.InfoContext(ctx, "Received shutdown signal, shutting down server...")
 
-	ctxShutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctxShutdown, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctxShutdown); err != nil {
