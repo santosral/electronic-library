@@ -9,6 +9,7 @@
 5. [Debugging the App](#debugging-the-application)
 6. [Concurrency Control in PostgreSQL](#concurrency-control-in-postgresql)
 7. [Installing and Using Postman for API Testing](#installing-and-using-postman-for-api-testing)
+8. [Ideas / Suggestions](#ideas--suggestions)
 
 ---
 
@@ -132,6 +133,10 @@ go run cmd/seeder/main.go
 
 ### 3. Start your server
 
+```bash
+go run cmd/api/main.go
+```
+
 ## Debugging the Application
 
 To debug the application using **VSCode**, follow these steps:
@@ -247,3 +252,84 @@ Once Postman is installed, you can import your eBook API request collection into
    - Click on the collection and select the specific request you wish to test.
 
 Now you can start testing and interacting with your eBook API directly within Postman!
+
+## Ideas / Suggestions
+
+**Authentication Mechanisms**:  
+There are several authentication methods that could be implemented to secure the API. These include:
+
+- **Basic Authentication**: A simple method where the client sends a username and password in the HTTP request headers for validation.
+  
+- **Token-Based Authentication**: The client sends a token (usually a string) in the request headers to verify the user's identity, allowing access to protected resources.
+
+- **JWT (JSON Web Tokens)**: A stateless authentication method where a server generates a signed token containing user information. The client sends this token in each request to prove their identity.
+
+- **OAuth2**: A more complex, third-party authentication mechanism allowing users to authenticate via external services like Google, Facebook, or GitHub.
+
+- **Session-Based Authentication**: The server keeps track of user sessions, and the client sends a session cookie with each request to maintain authentication.
+
+**Reason for Not Implementing Yet**:  
+Authentication has a broad specification, and the choice of which method to use depends on several factors, such as security needs, application requirements, and user base. For now, I haven’t implemented any of these methods to keep the focus on other functionalities.
+
+---
+
+**Pagination**:  
+Pagination has been added to the book search functionality to manage large sets of results. This is particularly important for APIs that may deal with large amounts of data, ensuring better performance and a smoother user experience.
+
+**Reasons for Adding Pagination**:  
+
+- **Improved Performance**: Without pagination, the search query for books could return too many results, causing high memory usage and slowing down response times. Pagination allows the API to return only a subset of results at a time, improving speed.
+  
+- **User Experience**: Pagination makes it easier for users to browse through large datasets without overwhelming them with long lists of results. It also provides more control over the number of results displayed.
+  
+- **Reduced Server Load**: By limiting the number of results returned in each query, we reduce the load on the database and the server, as fewer records are processed and sent in each response.
+
+---
+
+**Unique Borrower per Book**:  
+For the **borrow** and **return** endpoints, the idea is to ensure that each book is linked to a unique borrower at any given time, meaning only one borrower’s name can be associated with the book until it is returned.
+
+**Reason for Not Implementing Yet**:  
+Due to time constraints, this feature has not been implemented. While it is an important feature for data consistency and preventing multiple borrowers for a single book, it requires additional logic to check and enforce the uniqueness of the borrower per book.
+
+To implement this properly, we would need to introduce a **User table** to manage borrowers and link each borrowing transaction to a unique user. This would require:
+
+- Creating a **User** table to store user data (e.g., name, email, etc.).
+- Updating the **Loan Detail** table to store the relationship between borrowed books and their borrowers.
+- Modifying the **borrow** and **return** endpoints to ensure that a book can only be borrowed by one user at a time.
+
+---
+
+**Rate Limiting**:  
+Rate limiting is a technique used to control the amount of incoming requests to an API in a given period. It helps prevent abuse, protects server resources, and ensures fair usage of the API.
+
+**Reason for Not Implementing Yet**:  
+Although rate limiting is an important feature to ensure the API remains secure and performant, it has not been implemented yet. The challenge lies in deciding where to apply the rate limit:  
+
+- **On the AWS Side**: AWS offers services like **API Gateway** or **AWS WAF** that can be used to enforce rate limiting at the edge before requests hit the application server. This would reduce the load on the application server but may require configuring and managing these AWS services.  
+- **On the Application Side**: Implementing rate limiting within the app itself could offer more granular control over the rate limiting logic. However, this would increase the load on the server and may complicate the implementation.
+
+---
+
+**API Versioning**:  
+API versioning is a practice used to ensure backward compatibility when making changes to an API. By maintaining different versions of the API, we can ensure that existing clients continue to function as expected while new features are introduced.
+
+**Reason for Not Implementing Yet**:  
+API versioning is important for long-term maintenance, but it has not been implemented yet for the following reasons:
+
+- **No Major Changes**: The API is still in its early stages, and no major breaking changes have been introduced that would necessitate versioning. Thus, it's not critical at this point.
+- **Complexity**: Introducing versioning adds additional complexity to the routing and management of API endpoints. For instance, we'd need to ensure that the version is correctly handled by the server, and it could require changes to endpoint definitions, route handling, and documentation.
+
+Possible strategies for API versioning include:
+
+- **URI Versioning**: Including the version number in the URL, like `/api/v1/books`, `/api/v2/books`, etc.
+- **Header Versioning**: Specifying the API version in the request header, such as `Accept: application/vnd.api.v1+json`.
+- **Query Parameter Versioning**: Using a query parameter like `/api/books?version=1`.
+
+---
+
+**Serializable Transaction Error Retry Mechanism**
+A serializable transaction error retry mechanism ensures that database transactions are handled in a way that they are executed serially without interference from concurrent transactions. When a transaction fails due to issues like deadlocks or temporary errors, this mechanism attempts to retry the operation a defined number of times, reducing the chances of system downtime or inconsistencies.
+
+**Reason for Not Implementing Yet**
+The retry mechanism has not been implemented due to its complexity in transaction management. Implementing a retry mechanism requires careful handling of transaction isolation levels to avoid issues like data inconsistencies or infinite loops. Additionally, retries can introduce delays, potentially affecting performance, and may require fine-tuning for efficiency.
